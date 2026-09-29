@@ -16,6 +16,7 @@ import itertools
 import random
 import string
 import time
+import zlib
 from typing import Callable, Iterator
 
 from scapy.layers.dns import DNS, DNSQR, DNSRR
@@ -122,7 +123,9 @@ class SyntheticTraffic:
         src_mac = MACS.get(src, MACS[GATEWAY])
         dst_mac = MACS.get(dst, MACS[GATEWAY])
         if ttl is None:
-            ttl = 64 if src in MACS else self.rng.choice([52, 116, 118, 243])
+            # Mỗi host ngoài có 1 TTL cố định (như thật: cùng hệ điều hành, cùng số hop).
+            # TTL ngẫu nhiên theo từng gói sẽ khiến detector TTL bất thường báo nhầm hàng loạt.
+            ttl = 64 if src in MACS else (52, 116, 118, 243)[zlib.crc32(src.encode()) % 4]
         return Ether(src=src_mac, dst=dst_mac) / IP(src=src, dst=dst, ttl=ttl)
 
     def eport(self) -> int:

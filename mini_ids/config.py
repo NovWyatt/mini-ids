@@ -48,11 +48,12 @@ class Config:
         self.home_net = NetSet(self.data.get("home_net", []))
 
     @classmethod
-    def load(cls, path: str | Path | None = None) -> "Config":
+    def load(cls, path: str | Path | None = None, use_local: bool = True) -> "Config":
+        """use_local=False: bỏ qua config/local.yaml (test cần kết quả không phụ thuộc máy)."""
         with open(DEFAULT_CONFIG, encoding="utf-8") as fh:
             data = yaml.safe_load(fh) or {}
         local = DEFAULT_CONFIG.with_name("local.yaml")
-        if local.exists():
+        if use_local and local.exists():
             with open(local, encoding="utf-8") as fh:
                 data = deep_merge(data, yaml.safe_load(fh) or {})
         if path:

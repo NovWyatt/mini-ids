@@ -473,6 +473,7 @@
       if (!a) continue;
       a.count = u.count;
       a.last_seen = u.last_seen;
+      if (u.pcap) a.pcap = u.pcap;   // evidence được ghi trễ vài giây sau alert
       const li = $(`#alerts li[data-id="${CSS.escape(u.id)}"]`);
       if (li) li.replaceWith(alertRow(a, false));
       if (state.openId === u.id) fillDrawer(a);

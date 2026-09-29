@@ -15,7 +15,7 @@ from mini_ids.packet import PacketInfo  # noqa: E402
 @pytest.fixture
 def cfg(tmp_path) -> Config:
     """Config demo nhưng mọi output ghi vào thư mục tạm."""
-    c = Config.load(PROJECT_ROOT / "config" / "demo.yaml")
+    c = Config.load(PROJECT_ROOT / "config" / "demo.yaml", use_local=False)
     c.override({
         "logging": {"dir": str(tmp_path / "logs")},
         "evidence": {"dir": str(tmp_path / "evidence")},

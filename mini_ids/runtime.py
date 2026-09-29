@@ -66,7 +66,8 @@ class Runtime:
             evidence = EvidenceBuffer(cfg.path(ecfg.get("dir", "evidence")),
                                       int(ecfg.get("buffer_packets", 5000)),
                                       int(ecfg.get("max_packets_per_alert", 400)))
-        self.alerts = AlertManager(float(acfg.get("cooldown_seconds", 60)), sinks, evidence)
+        self.alerts = AlertManager(float(acfg.get("cooldown_seconds", 60)), sinks, evidence,
+                                   evidence_delay=float(ecfg.get("delay_seconds", 5)))
         self.engine = Engine(cfg, self.alerts)
 
     # ------------------------------------------------------------------

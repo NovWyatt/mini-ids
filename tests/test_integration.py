@@ -59,7 +59,7 @@ def test_alert_manager_dedup_and_cooldown():
 def attack_run(tmp_path_factory):
     from mini_ids.config import PROJECT_ROOT, Config
     tmp = tmp_path_factory.mktemp("run")
-    cfg = Config.load(PROJECT_ROOT / "config" / "demo.yaml")
+    cfg = Config.load(PROJECT_ROOT / "config" / "demo.yaml", use_local=False)
     cfg.override({"detectors": {"ml": {"model_file": str(tmp / "m.json")}}})
     gen = SyntheticTraffic(seed=11, start=START)
     names = list(gen.scenarios)
@@ -95,6 +95,15 @@ def test_evidence_pcap_written(attack_run):
     assert with_pcap
     from scapy.utils import rdpcap
     assert len(rdpcap(with_pcap[0].pcap)) > 0
+
+
+def test_evidence_includes_packets_after_alert(attack_run):
+    """Alert FTP bật ở dòng USER; evidence ghi trễ nên phải chứa cả dòng PASS tới sau."""
+    from scapy.utils import rdpcap
+    _, _, alerts, _ = attack_run
+    ftp = next(a for a in alerts if a.title == "FTP login cleartext")
+    assert ftp.pcap
+    assert any(b"PASS hunter2" in bytes(p) for p in rdpcap(ftp.pcap))
 
 
 def test_normal_traffic_is_quiet(cfg):

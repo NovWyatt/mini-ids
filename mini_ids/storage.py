@@ -61,8 +61,8 @@ class AlertStore:
         if not alerts:
             return
         with self._lock:
-            self._db.executemany("UPDATE alerts SET count=?, last_seen=? WHERE id=?",
-                                 [(a.count, a.last_seen, a.id) for a in alerts])
+            self._db.executemany("UPDATE alerts SET count=?, last_seen=?, pcap=? WHERE id=?",
+                                 [(a.count, a.last_seen, a.pcap, a.id) for a in alerts])
             self._db.commit()
 
     def ack(self, alert_id: str, acked: bool = True) -> bool:

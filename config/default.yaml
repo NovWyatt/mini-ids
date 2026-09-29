@@ -29,6 +29,7 @@ evidence:
   dir: evidence            # mỗi alert kèm 1 file .pcap -> mở bằng Wireshark
   buffer_packets: 5000     # ring buffer gói tin gần nhất
   max_packets_per_alert: 400
+  delay_seconds: 5         # ghi pcap sau alert vài giây để có cả các gói tới sau
 
 alerting:
   cooldown_seconds: 60     # cùng 1 (detector, key) chỉ báo 1 lần / cooldown, gộp count

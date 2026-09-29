@@ -23,10 +23,15 @@ Subscriber = Callable[[str, Any], None]
 
 class AlertManager:
     def __init__(self, cooldown: float = 60, sinks: list[Sink] | None = None,
-                 evidence: EvidenceBuffer | None = None, recent: int = 500):
+                 evidence: EvidenceBuffer | None = None, recent: int = 500,
+                 evidence_delay: float = 5.0):
         self.cooldown = float(cooldown)
         self.sinks = list(sinks or [])
         self.evidence = evidence
+        # Ghi pcap TRỄ vài giây sau alert: lúc alert bật thường mới thấy phần đầu cuộc tấn công
+        # (vd FTP: alert ở dòng USER, dòng PASS tới ngay sau) → chờ thêm để evidence đầy đủ hơn.
+        self.evidence_delay = float(evidence_delay)
+        self._pending_evidence: list[Alert] = []
         self.recent: deque[Alert] = deque(maxlen=recent)
         self.by_severity: Counter[str] = Counter()
         self.by_detector: Counter[str] = Counter()
@@ -67,7 +72,7 @@ class AlertManager:
 
             alert.assign_id()
             if self.evidence is not None:
-                alert.pcap = self.evidence.dump(alert)
+                self._pending_evidence.append(alert)
             self._active[k] = alert
             self.recent.appendleft(alert)
             self.total += 1
@@ -82,8 +87,18 @@ class AlertManager:
             return alert
 
     def flush(self, now: float | None = None) -> None:
-        """Đẩy các count đã gộp xuống sink; dọn alert đã hết cooldown."""
+        """Ghi evidence đã đủ hạn, đẩy count đã gộp xuống sink, dọn alert hết cooldown.
+        now=None: ghi hết evidence đang chờ (khi dừng chương trình)."""
         with self._lock:
+            if self._pending_evidence:
+                due = [a for a in self._pending_evidence if now is None or now - a.ts >= self.evidence_delay]
+                if due:
+                    due_ids = {a.id for a in due}
+                    self._pending_evidence = [a for a in self._pending_evidence if a.id not in due_ids]
+                    for a in due:
+                        a.pcap = self.evidence.dump(a)
+                        if a.pcap:
+                            self._dirty[a.id] = a
             dirty = list(self._dirty.values())
             self._dirty.clear()
             if now is not None:
@@ -97,8 +112,8 @@ class AlertManager:
                 sink.update(dirty)
             except Exception:
                 log.exception("Sink %s lỗi khi update", type(sink).__name__)
-        self._publish("alert_update", [{"id": a.id, "count": a.count, "last_seen": a.last_seen}
-                                       for a in dirty])
+        self._publish("alert_update", [{"id": a.id, "count": a.count, "last_seen": a.last_seen,
+                                        "pcap": a.pcap} for a in dirty])
 
     def summary(self) -> dict[str, Any]:
         with self._lock:

@@ -133,7 +133,7 @@ Chế độ demo ghi vào `logs/demo.db`, `logs/demo-alerts.jsonl`, `evidence/de
 .venv\Scripts\python -m pytest
 ```
 
-65 test: unit test từng detector (cả trường hợp dương tính và traffic bình thường không được báo), mỗi kịch bản tấn công phải bị đúng detector bắt, 3 phút traffic bình thường phải không có cảnh báo nào, API dashboard, chống path traversal khi tải pcap.
+66 test: unit test từng detector (cả trường hợp dương tính và traffic bình thường không được báo), mỗi kịch bản tấn công phải bị đúng detector bắt, 3 phút traffic bình thường phải không có cảnh báo nào, API dashboard, chống path traversal khi tải pcap.
 
 ## Giới hạn đã biết
 

@@ -106,7 +106,9 @@ class WebhookSink(Sink):
         text = (f"🚨 [{a.severity.upper()}] {a.title}\n{a.src or '?'} → {a.dst or '-'}\n"
                 f"{a.description}\nMITRE: {', '.join(a.mitre) or '-'} | detector: {a.detector}")
         if self.kind == "discord":
-            return {"content": text[:1900]}
+            # Nội dung alert có thể chứa chuỗi do kẻ tấn công kiểm soát (vd tên DNS "@everyone")
+            # → tắt mọi mention để không ai lợi dụng IDS để ping cả server.
+            return {"content": text[:1900], "allowed_mentions": {"parse": []}}
         if self.kind == "slack":
             return {"text": text}
         if self.kind == "telegram":
