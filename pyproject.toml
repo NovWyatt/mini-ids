@@ -1,0 +1,37 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mini-ids"
+version = "0.1.0"
+description = "Mini IDS: network traffic monitor bằng Python/Scapy — phát hiện traffic bất thường, log & cảnh báo, dashboard realtime."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "NovWyatt" }]
+dependencies = [
+    "scapy>=2.5",
+    "numpy>=1.24",
+    "pyyaml>=6.0",
+    "rich>=13.0",
+    "fastapi>=0.110",
+    "uvicorn>=0.29",
+    "websockets>=12.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0", "httpx>=0.27"]
+
+[project.scripts]
+mini-ids = "mini_ids.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["mini_ids*"]
+
+[tool.setuptools.package-data]
+mini_ids = ["web/static/*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"

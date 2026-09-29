@@ -1,0 +1,23 @@
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+build/
+dist/
+
+# runtime output
+logs/
+evidence/
+models/*.json
+!models/.gitkeep
+captures/*.pcap
+captures/*.pcapng
+!captures/.gitkeep
+
+# local config overrides (có thể chứa webhook URL / token)
+config/local.yaml
+.env
+
+# công cụ cục bộ
+.claude/

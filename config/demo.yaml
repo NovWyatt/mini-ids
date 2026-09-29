@@ -1,0 +1,20 @@
+# Profile cho `mini-ids demo` và khi replay file pcap sinh bởi `mini-ids gen-pcap`.
+# Traffic giả lập ngắn hơn thực tế nên hạ vài ngưỡng / thời gian học.
+# Log demo tách riêng để không lẫn với log capture thật.
+
+logging:
+  alerts_jsonl: demo-alerts.jsonl
+  database: demo.db
+
+evidence:
+  dir: evidence/demo
+
+detectors:
+  anomaly:
+    warmup: 20
+  exfil:
+    threshold_bytes: 5000000
+  ml:
+    model_file: models/iforest-demo.json
+    train_flows: 250
+    flow_idle_timeout: 5

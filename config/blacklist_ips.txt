@@ -1,0 +1,5 @@
+# IP / CIDR độc hại — mỗi dòng 1 mục, '#' là comment.
+# File intel_ips.txt (cùng thư mục) được sinh bởi: mini-ids intel update
+#
+# 203.0.113.0/24 là dải TEST-NET-3 (RFC 5737) — dùng cho demo, không có máy thật.
+203.0.113.66

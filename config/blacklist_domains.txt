@@ -1,0 +1,3 @@
+# Domain độc hại — khớp chính domain đó và mọi subdomain.
+# .example là TLD dành riêng cho tài liệu (RFC 2606) — dùng cho demo.
+malware-c2.example

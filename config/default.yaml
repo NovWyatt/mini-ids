@@ -1,0 +1,152 @@
+# ============================================================
+#  mini-IDS — cấu hình mặc định
+#  Muốn sửa: tạo config/local.yaml (chỉ ghi những key cần đổi),
+#  file đó được merge đè lên file này và KHÔNG bị commit lên git.
+# ============================================================
+
+# Mạng "nhà" (giống $HOME_NET trong Snort/Suricata). Dùng để phân biệt
+# traffic nội bộ vs ra Internet (exfiltration, rule src: home / dst: external).
+home_net:
+  - 10.0.0.0/8
+  - 172.16.0.0/12
+  - 192.168.0.0/16
+  - fe80::/10
+
+capture:
+  interface: null          # null = interface mặc định của scapy
+  bpf_filter: ""           # vd: "not port 22" hoặc "tcp or udp or icmp or arp"
+  max_payload: 2048        # số byte payload giữ lại để match signature
+
+logging:
+  dir: logs
+  alerts_jsonl: alerts.jsonl      # 1 dòng JSON / alert (dễ đẩy vào ELK, Splunk)
+  database: ids.db                # SQLite — lịch sử alert cho dashboard
+  app_log: mini_ids.log
+  jsonl_max_mb: 20
+
+evidence:
+  enabled: true
+  dir: evidence            # mỗi alert kèm 1 file .pcap -> mở bằng Wireshark
+  buffer_packets: 5000     # ring buffer gói tin gần nhất
+  max_packets_per_alert: 400
+
+alerting:
+  cooldown_seconds: 60     # cùng 1 (detector, key) chỉ báo 1 lần / cooldown, gộp count
+  console: true
+  min_console_severity: low
+  webhook:
+    enabled: false
+    kind: discord          # discord | slack | telegram | generic
+    url: ""                # telegram: https://api.telegram.org/bot<TOKEN>/sendMessage
+    telegram_chat_id: ""
+    min_severity: high
+
+web:
+  host: 127.0.0.1          # chỉ nghe localhost — đừng expose dashboard ra LAN khi chưa có auth
+  port: 8800
+
+detectors:
+  portscan:
+    enabled: true
+    window: 10               # giây
+    vertical_threshold: 20   # số port khác nhau trên 1 host
+    horizontal_threshold: 20 # số host khác nhau trên cùng 1 port
+    horizontal_ignore_ports: [53, 80, 123, 443, 853, 5353]
+
+  synflood:
+    enabled: true
+    window: 5
+    rate_threshold: 100      # SYN/giây tới 1 đích
+    max_completion_ratio: 0.3  # tỉ lệ bắt tay hoàn tất (ACK/SYN) thấp => half-open
+
+  icmp:
+    enabled: true
+    window: 5
+    flood_rate: 50           # echo-request/giây tới 1 đích
+    sweep_window: 10
+    sweep_threshold: 15      # ping tới >= 15 host khác nhau
+    large_payload: 1024      # byte
+
+  arp:
+    enabled: true
+    window: 10
+    reply_flood_threshold: 30
+    scan_threshold: 50       # ARP request tới >= 50 IP khác nhau
+    multi_ip_threshold: 5    # 1 MAC nhận là chủ của >= 5 IP
+
+  dns:
+    enabled: true
+    max_query_length: 60
+    entropy_min_length: 20
+    entropy_threshold: 3.8   # bit/ký tự (Shannon)
+    window: 60
+    unique_subdomain_threshold: 40
+    nxdomain_threshold: 20
+    txt_threshold: 30
+    allow_domains:           # domain hợp lệ hay có subdomain dài/ngẫu nhiên
+      - cloudfront.net
+      - akamaiedge.net
+      - googlevideo.com
+      - amazonaws.com
+      - windowsupdate.com
+      - in-addr.arpa
+      - ip6.arpa
+
+  bruteforce:
+    enabled: true
+    window: 60
+    threshold: 15            # số lần mở kết nối mới tới cùng dịch vụ đăng nhập
+    ports:
+      21: FTP
+      22: SSH
+      23: Telnet
+      25: SMTP
+      110: POP3
+      143: IMAP
+      445: SMB
+      1433: MSSQL
+      3306: MySQL
+      3389: RDP
+      5432: PostgreSQL
+      5900: VNC
+
+  blacklist:
+    enabled: true
+    ip_files: [config/blacklist_ips.txt, config/intel_ips.txt]
+    domain_files: [config/blacklist_domains.txt]
+
+  signatures:
+    enabled: true
+    rules_file: config/rules.yaml
+
+  anomaly:
+    enabled: true
+    alpha: 0.05              # hệ số EWMA
+    warmup: 60               # số giây học baseline trước khi báo
+    z_threshold: 5.0
+    min_pps: 200             # tránh báo khi traffic còn nhỏ
+    min_bps: 1000000         # byte/giây tối thiểu để xét spike theo băng thông
+    min_std_ratio: 0.1       # std tối thiểu = 10% mean
+
+  exfil:
+    enabled: true
+    window: 300
+    threshold_bytes: 50000000   # 50 MB từ 1 host nội bộ ra 1 đích ngoài trong 5 phút
+
+  beacon:
+    enabled: true
+    min_events: 6
+    min_interval: 1.0
+    max_interval: 3600
+    max_cv: 0.1              # coefficient of variation của khoảng cách giữa các lần kết nối
+    allow_ports: [53, 123]
+
+  ml:
+    enabled: true
+    model_file: models/iforest.json
+    auto_train: true         # chưa có model -> tự học từ traffic đầu phiên
+    train_flows: 300
+    flow_idle_timeout: 15
+    min_score: 0.70
+    n_trees: 100
+    sample_size: 256

@@ -1,0 +1,34 @@
+/* Phosphor Icons (MIT) - subset of @phosphor-icons/web 2.1.2 regular. https://phosphoricons.com */
+@font-face{font-family:"Phosphor";src:url("./Phosphor.woff2") format("woff2");font-weight:normal;font-style:normal;font-display:block}
+.ph{font-family:"Phosphor"!important;speak:never;font-style:normal;font-weight:normal;font-variant:normal;text-transform:none;line-height:1;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;display:inline-block}
+.ph-shield-check:before{content: "\e40c";}
+.ph-wifi-high:before{content: "\e4ea";}
+.ph-flask:before{content: "\e79e";}
+.ph-file-arrow-down:before{content: "\e232";}
+.ph-sun:before{content: "\e472";}
+.ph-moon:before{content: "\e330";}
+.ph-warning-octagon:before{content: "\e4e4";}
+.ph-warning:before{content: "\e4e0";}
+.ph-warning-circle:before{content: "\e4e2";}
+.ph-info:before{content: "\e2ce";}
+.ph-magnifying-glass:before{content: "\e30c";}
+.ph-download-simple:before{content: "\e20c";}
+.ph-check:before{content: "\e182";}
+.ph-check-circle:before{content: "\e184";}
+.ph-x:before{content: "\e4f6";}
+.ph-arrow-right:before{content: "\e06c";}
+.ph-clock:before{content: "\e19a";}
+.ph-cpu:before{content: "\e610";}
+.ph-brain:before{content: "\e74e";}
+.ph-plugs-connected:before{content: "\eb5a";}
+.ph-plugs:before{content: "\eb56";}
+.ph-globe-hemisphere-west:before{content: "\e28c";}
+.ph-house-line:before{content: "\e2c4";}
+.ph-funnel:before{content: "\e266";}
+.ph-book-open:before{content: "\e0e6";}
+.ph-arrow-square-out:before{content: "\e5de";}
+.ph-pulse:before{content: "\e000";}
+.ph-pause:before{content: "\e39e";}
+.ph-play:before{content: "\e3d0";}
+.ph-hash:before{content: "\e2a2";}
+.ph-desktop-tower:before{content: "\e562";}

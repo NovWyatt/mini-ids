@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>mini-IDS</title>
+  <meta name="color-scheme" content="dark light">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%233987e5'/%3E%3Cpath d='M9 21V11l7 6 7-6v10' fill='none' stroke='%23fff' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="/static/vendor/phosphor-subset.css">
+  <link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+  <a class="skip" href="#feed">Tới danh sách cảnh báo</a>
+
+  <header class="topbar">
+    <div class="brand">
+      <i class="ph ph-shield-check" aria-hidden="true"></i>
+      <span>mini-IDS</span>
+    </div>
+    <div class="source" id="source">
+      <span class="mode" id="mode-chip"><i class="ph ph-pulse" aria-hidden="true"></i><span>Đang tải</span></span>
+      <span class="source-desc mono" id="source-desc"></span>
+    </div>
+    <div class="topbar-state">
+      <span class="state" id="capture-state" role="status"></span>
+      <span class="state muted" id="uptime" title="Thời gian chạy"></span>
+      <span class="state" id="conn-state" role="status"></span>
+      <button class="icon-btn" id="theme-toggle" type="button" aria-label="Đổi giao diện sáng/tối">
+        <i class="ph ph-moon" aria-hidden="true"></i>
+      </button>
+    </div>
+  </header>
+
+  <div class="banner" id="banner" hidden></div>
+
+  <section class="kpis" aria-label="Chỉ số tổng quan">
+    <div class="kpi kpi-hero">
+      <div class="kpi-label">Cảnh báo trong phiên</div>
+      <div class="kpi-value" id="kpi-alerts"><span class="skeleton sk-num"></span></div>
+      <ul class="sev-breakdown" id="kpi-sev" aria-label="Theo mức độ"></ul>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Gói tin / giây</div>
+      <div class="kpi-value" id="kpi-pps"><span class="skeleton sk-num"></span></div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Băng thông</div>
+      <div class="kpi-value" id="kpi-bps"><span class="skeleton sk-num"></span></div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Tổng gói đã phân tích</div>
+      <div class="kpi-value" id="kpi-total"><span class="skeleton sk-num"></span></div>
+      <div class="kpi-sub" id="kpi-bytes"></div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Host nội bộ</div>
+      <div class="kpi-value" id="kpi-hosts"><span class="skeleton sk-num"></span></div>
+      <div class="kpi-sub" id="kpi-speed"></div>
+    </div>
+  </section>
+
+  <main class="layout">
+    <section class="panel traffic" aria-labelledby="traffic-title">
+      <h2 id="traffic-title" class="panel-title">Lưu lượng 5 phút gần nhất</h2>
+      <figure class="chart" id="chart-pps">
+        <figcaption><span>Gói tin / giây</span><span class="chart-note" id="pps-note"></span></figcaption>
+        <div class="chart-box"><canvas aria-label="Biểu đồ gói tin mỗi giây" role="img"></canvas><div class="tip" hidden></div></div>
+      </figure>
+      <figure class="chart" id="chart-bps">
+        <figcaption><span>Băng thông (bit / giây)</span><span class="chart-note" id="bps-note"></span></figcaption>
+        <div class="chart-box"><canvas aria-label="Biểu đồ băng thông" role="img"></canvas><div class="tip" hidden></div></div>
+      </figure>
+      <p class="chart-legend">
+        <span class="legend-item"><span class="mk sev-bg-critical"></span>Critical</span>
+        <span class="legend-item"><span class="mk sev-bg-high"></span>High</span>
+        <span class="legend-item"><span class="mk sev-bg-medium"></span>Medium</span>
+        <span class="legend-item"><span class="mk sev-bg-low"></span>Low</span>
+        <span class="legend-hint">Chấm tròn phía trên biểu đồ là thời điểm phát sinh cảnh báo.</span>
+      </p>
+    </section>
+
+    <section class="panel breakdown" aria-label="Phân tích traffic">
+      <div class="col">
+        <h2 class="panel-title">Giao thức</h2>
+        <ul class="bars" id="protocols"></ul>
+      </div>
+      <div class="col">
+        <h2 class="panel-title">Top nguồn theo dung lượng</h2>
+        <ul class="rank" id="top-src"></ul>
+      </div>
+      <div class="col">
+        <h2 class="panel-title">Port đích hay bị gọi</h2>
+        <ul class="rank" id="top-ports"></ul>
+      </div>
+    </section>
+
+    <aside class="panel feed" id="feed" aria-labelledby="feed-title" tabindex="-1">
+      <div class="feed-head">
+        <h2 id="feed-title" class="panel-title">Cảnh báo <span class="count-pill" id="feed-count">0</span></h2>
+        <div class="filters" role="group" aria-label="Lọc theo mức độ">
+          <button type="button" class="chip is-on" data-sev="">Tất cả</button>
+          <button type="button" class="chip" data-sev="critical"><span class="mk sev-bg-critical"></span>Critical</button>
+          <button type="button" class="chip" data-sev="high"><span class="mk sev-bg-high"></span>High</button>
+          <button type="button" class="chip" data-sev="medium"><span class="mk sev-bg-medium"></span>Medium</button>
+          <button type="button" class="chip" data-sev="low"><span class="mk sev-bg-low"></span>Low</button>
+        </div>
+        <div class="feed-tools">
+          <label class="search">
+            <i class="ph ph-magnifying-glass" aria-hidden="true"></i>
+            <span class="sr-only">Tìm cảnh báo</span>
+            <input id="search" type="search" placeholder="IP, tiêu đề, detector" autocomplete="off">
+          </label>
+          <label class="toggle">
+            <input type="checkbox" id="hide-acked">
+            <span>Ẩn đã xử lý</span>
+          </label>
+        </div>
+      </div>
+      <ol class="alerts" id="alerts" aria-live="polite" aria-relevant="additions"></ol>
+      <div class="empty" id="alerts-empty" hidden>
+        <i class="ph ph-shield-check" aria-hidden="true"></i>
+        <p class="empty-title">Chưa có cảnh báo</p>
+        <p class="empty-body" id="empty-body">Traffic đang được giám sát. Alert sẽ xuất hiện ở đây ngay khi một detector phát hiện bất thường.</p>
+      </div>
+    </aside>
+
+    <section class="panel detectors" aria-labelledby="det-title">
+      <h2 id="det-title" class="panel-title">Detector đang chạy</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th scope="col">Detector</th><th scope="col">Phát hiện gì</th><th scope="col">MITRE ATT&amp;CK</th><th scope="col">Trạng thái</th><th scope="col" class="num">Đã báo</th></tr>
+          </thead>
+          <tbody id="detectors"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <div class="scrim" id="scrim" hidden></div>
+  <aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-labelledby="drawer-title" hidden>
+    <div class="drawer-head">
+      <div>
+        <div class="drawer-sev" id="drawer-sev"></div>
+        <h2 id="drawer-title"></h2>
+      </div>
+      <button class="icon-btn" id="drawer-close" type="button" aria-label="Đóng"><i class="ph ph-x" aria-hidden="true"></i></button>
+    </div>
+    <div class="drawer-body" id="drawer-body"></div>
+    <div class="drawer-actions" id="drawer-actions"></div>
+  </aside>
+
+  <script src="/static/app.js" defer></script>
+</body>
+</html>

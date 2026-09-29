@@ -1,0 +1,165 @@
+# ============================================================
+#  Signature rules — phiên bản "Snort-lite"
+#
+#  So sánh với Snort:
+#    alert tcp $EXTERNAL_NET any -> $HOME_NET 80 (msg:"SQLi"; content:"union"; nocase; pcre:"/union\s+select/i"; sid:1000001;)
+#  tương đương rule YAML:
+#    proto: tcp, src_net: external, dst_net: home, dst_port: 80,
+#    content: [union], regex: 'union\s+select'
+#
+#  Trường hỗ trợ:
+#    id, name, severity (low|medium|high|critical), proto (tcp|udp|icmp|any)
+#    src_port / dst_port: số, list số, hoặc bỏ trống = any
+#    src_net / dst_net: home | external | any
+#    content: list chuỗi — TẤT CẢ phải xuất hiện trong payload
+#    nocase: true (mặc định) — không phân biệt hoa thường
+#    regex: biểu thức chính quy (Python re) áp lên payload
+#    min_payload: số byte payload tối thiểu (mặc định 0; >0 nếu cần có dữ liệu)
+#    mitre: list technique ID ATT&CK
+# ============================================================
+
+# ---------- Tấn công web ----------
+- id: 1000001
+  name: "SQL Injection: UNION SELECT"
+  severity: high
+  proto: tcp
+  dst_port: [80, 8000, 8080, 8888]
+  regex: 'union(\s|%20|\+|/\*.*?\*/)+(all(\s|%20|\+)+)?select'
+  mitre: [T1190]
+  description: "Payload HTTP chứa UNION SELECT, kỹ thuật ghép truy vấn để rút dữ liệu DB."
+
+- id: 1000002
+  name: "SQL Injection: tautology (' OR 1=1)"
+  severity: high
+  proto: tcp
+  dst_port: [80, 8000, 8080, 8888]
+  regex: "('|%27)(\\s|%20|\\+)*or(\\s|%20|\\+)+('?\\d+'?|'[^']*')(\\s|%20|\\+)*(=|%3d)"
+  mitre: [T1190]
+  description: "Mệnh đề luôn đúng kiểu ' OR 1=1 để vượt qua đăng nhập."
+
+- id: 1000003
+  name: "Cross-Site Scripting (XSS)"
+  severity: medium
+  proto: tcp
+  dst_port: [80, 8000, 8080, 8888]
+  regex: '(<|%3c)script|javascript:|onerror(\s|%20)*='
+  mitre: [T1189]
+  description: "Chèn thẻ <script> / event handler vào request."
+
+- id: 1000004
+  name: "Path traversal"
+  severity: high
+  proto: tcp
+  dst_port: [80, 8000, 8080, 8888]
+  regex: '(\.\./|\.\.%2f|%2e%2e%2f|\.\.\\){2,}'
+  mitre: [T1083]
+  description: "Leo thư mục ../../ để đọc file ngoài webroot."
+
+- id: 1000005
+  name: "Truy cập /etc/passwd hoặc win.ini"
+  severity: high
+  proto: tcp
+  regex: '/etc/(passwd|shadow)|win\.ini|boot\.ini'
+  min_payload: 1
+  mitre: [T1005]
+
+- id: 1000006
+  name: "Log4Shell (CVE-2021-44228) JNDI lookup"
+  severity: critical
+  proto: tcp
+  regex: '\$\{(jndi|\$\{lower:j\}|\$\{::-j\})'
+  mitre: [T1190]
+  description: "Chuỗi ${jndi:...} khai thác Log4j RCE."
+
+- id: 1000007
+  name: "Shellshock (CVE-2014-6271)"
+  severity: critical
+  proto: tcp
+  content: ["() {"]
+  regex: '\(\)\s*\{\s*:?\s*;\s*\}\s*;'
+  mitre: [T1190]
+
+- id: 1000008
+  name: "User-Agent của công cụ scan"
+  severity: medium
+  proto: tcp
+  regex: 'user-agent:[^\r\n]*(sqlmap|nikto|nmap|masscan|zgrab|gobuster|dirbuster|wpscan|nuclei|hydra)'
+  mitre: [T1595.002]
+  description: "Request mang User-Agent của tool dò lỗ hổng tự động."
+
+- id: 1000009
+  name: "Command injection / webshell"
+  severity: high
+  proto: tcp
+  regex: '(cmd\.exe(\s|%20|\+)*/c|/bin/(ba)?sh(\s|%20|\+)+-[ci]|powershell(\.exe)?(\s|%20|\+)+-(e|enc|encodedcommand)(\s|%20|\+))'
+  mitre: [T1059]
+
+# ---------- Mật khẩu truyền dạng cleartext ----------
+- id: 1000101
+  name: "FTP login cleartext"
+  severity: medium
+  proto: tcp
+  dst_port: 21
+  regex: '^(USER|PASS) '
+  nocase: false
+  mitre: [T1040]
+  description: "FTP gửi user/password không mã hoá, ai sniff cũng đọc được."
+
+- id: 1000102
+  name: "HTTP Basic Auth qua kênh không mã hoá"
+  severity: medium
+  proto: tcp
+  dst_port: [80, 8000, 8080, 8888]
+  content: ["authorization: basic "]
+  mitre: [T1040]
+
+- id: 1000103
+  name: "Phiên Telnet (cleartext)"
+  severity: low
+  proto: tcp
+  dst_port: 23
+  min_payload: 1
+  mitre: [T1040]
+
+# ---------- C2 / backdoor / policy ----------
+- id: 1000201
+  name: "Kết nối tới port reverse-shell phổ biến (4444/1337/31337)"
+  severity: high
+  proto: tcp
+  dst_port: [4444, 1337, 31337]
+  dst_net: external
+  mitre: [T1571]
+  description: "4444 là port mặc định của Metasploit reverse shell."
+
+- id: 1000202
+  name: "IRC ra Internet (C2 botnet kiểu cũ)"
+  severity: medium
+  proto: tcp
+  dst_port: [6667, 6697]
+  dst_net: external
+  mitre: [T1071]
+
+- id: 1000203
+  name: "Traffic Tor"
+  severity: medium
+  proto: tcp
+  dst_port: [9001, 9030, 9050, 9150]
+  dst_net: external
+  mitre: [T1090.003]
+
+- id: 1000204
+  name: "Crypto-mining (Stratum protocol)"
+  severity: high
+  proto: tcp
+  regex: 'mining\.(subscribe|authorize|submit)|stratum\+tcp://'
+  mitre: [T1496]
+
+- id: 1000205
+  name: "SMB ra Internet"
+  severity: medium
+  proto: tcp
+  dst_port: [139, 445]
+  src_net: home
+  dst_net: external
+  mitre: [T1021.002]
+  description: "SMB không bao giờ nên đi ra ngoài Internet (WannaCry, rò NTLM hash)."
